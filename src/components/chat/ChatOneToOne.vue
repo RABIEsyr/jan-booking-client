@@ -1,10 +1,17 @@
 <template>
   <div>
-      <h1 class="headline">Vue.js Chat Box</h1>
-
+    <v-container>
+      <v-row no-gutters>
+        <v-col 
+          cols="12"
+          class="pa-2"
+          >
+           <h1 class="head">Vue.js Chat Box</h1>
 <main id="ap">
   <section ref="chatArea" class="chat-area">
-    <p v-for="message in messages" :key="message.body" class="message" :class="{ 'message-out': message.author === 'you', 'message-in': message.author !== 'you' }">
+    <p v-for="message in messages" :key="message.body" class="message" 
+     :class="{ 'message-out': message.author === 'you', 'message-in': message.author !== 'you' }"
+    >
       {{ message.body }}
     </p>
   </section>
@@ -12,18 +19,18 @@
   <section class="chat-inputs">
 
     <form @submit.prevent="sendMessage()" id="person1-form">
-      <label for="person1-input">Bob</label>
+      <label for="person1-input"></label>
       <input v-model="bobMessage" id="person1-input" type="text" placeholder="Type your message">
       <button type="submit">Send</button>
     </form>
-<!-- <button @click="clearAllMessages">Clear All</button> -->
-    <!-- <form @submit.prevent="sendMessage('out')" id="person2-form">
-      <label for="person2-input">You</label>
-      <input v-model="youMessage" id="person2-input" type="text" placeholder="Type your message">
-      <button type="submit">Send</button>
-    </form> -->
   </section>
 </main>
+        </v-col>
+      </v-row>
+    </v-container>
+     
+
+
   </div>
 </template>
 
@@ -43,18 +50,18 @@ export default {
         bobMessage: '',
         youMessage: '',
         messages: [
-        {
-            body: 'Welcome to the chat, I\'m Bob!',
-            author: 'bob'
-        },
-        {
-            body: 'Thank you Bob',
-            author: 'you'
-        },
-        {
-            body: 'You\'re most welcome',
-            author: 'bob'
-        }
+        // {
+        //     body: 'Welcome to the chat, I\'m Bob!',
+        //     author: 'bob'
+        // },
+        // {
+        //     body: 'Thank you Bob',
+        //     author: 'you'
+        // },
+        // {
+        //     body: 'You\'re most welcome',
+        //     author: 'bob'
+        // }
         ]
   }
 },
@@ -153,10 +160,11 @@ created() {
       this.messages.push({body: msg.msg, author: 'you'})
        this.$nextTick(() => {
               document.getElementsByClassName('chat-area')[0].scrollTop = '11111';                      
-             }) 
+        }) 
     }
    
   })
+
 },
 destroyed() {
   console.log('destroyed')
@@ -178,7 +186,7 @@ destroyed() {
   height: 50vh;
   padding: 1em;
   overflow: auto;
-  max-width: 350px;
+  max-width: 100%;
   margin: 0 auto 2em auto;
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3)
 }
@@ -193,6 +201,7 @@ destroyed() {
   background: #407FFF;
   color: white;
   margin-left: 50%;
+  /* float: right; */
 }
 .message-in {
   background: #F1F0F0;
@@ -209,4 +218,12 @@ destroyed() {
   padding: .5em;  
 }
 
+#person1-form {
+  margin: auto;
+  padding: 10px;
+}
+.head {
+  margin: auto;
+  padding: 10px;
+}
 </style>

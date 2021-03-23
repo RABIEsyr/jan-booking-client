@@ -9,7 +9,7 @@
             :clipped="$vuetify.breakpoint.lgAndUp"
             app
           >
-            <v-list dense>
+            <v-list >
               <template>
                 <v-row>
                   <v-col cols="6"> </v-col>
@@ -106,6 +106,7 @@
             ></v-text-field>
 
             <v-spacer></v-spacer>
+            <span style="margin-right: 10px">{{username}}</span>
             <!-- <v-btn icon>
               <v-icon>mdi-account</v-icon>
             </v-btn> -->
@@ -258,6 +259,10 @@ import { eventBus } from "./main";
 // import Post from './components/post/post'
 import * as types from "./store/types";
 
+
+global.jQuery = require("jquery");
+var $ = global.jQuery;
+window.$ = $;
 export default {
   name: "App",
 
@@ -318,6 +323,7 @@ export default {
     keywords: "",
     isSearch: false,
     searchNewUser: [],
+    username: ''
   }),
   computed: {
     isAuth() {
@@ -352,6 +358,7 @@ export default {
     }
   },
   created() {
+    this.drawer = false;
     this.currentRouteName;
     this.socket.on("new-post", (post) => {
       console.log('App.vue new-post13333333', post)
@@ -383,7 +390,14 @@ export default {
     //     },
     //   }
     // ).then((value) => {console.log('App.vue 34121: ', value)});
-
+    axios.get("http://localhost:3000/users/get-username",
+         {
+          headers: {
+            authorization: localStorage.getItem("token"),
+          },
+        }).then((res) => {
+            this.username = res.data
+        })
   },
 
   methods: {
@@ -426,6 +440,9 @@ export default {
       this.windowWidth2 = window.innerWidth;
     },
     searchUser() {
+        $('document').ready(function() {
+          $(window).scrollTop(0);
+        });
       axios
         .post(
           "http://localhost:3000/users/search-user",

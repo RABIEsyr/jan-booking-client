@@ -1,5 +1,7 @@
 <template>
-  <div class="main">
+<div>
+  <div>
+    <div class="main">
     <div class="parent">
       <img
         class="image1"
@@ -60,8 +62,25 @@
           </div>
         </v-flex>
       </v-layout>
+    
     </div>
   </div>
+  </div>
+  <div>
+    <div v-for="post in posts" :key="post._id"  @click="inPostClick(post)">
+      <my-post
+        :image="'http://localhost:3000/static/' + post._id + '.PNG'"
+        :name="post.text"
+        :id="post._id"
+        :commentsArr="post.comments"
+        :likeNumber="post.likes.length"
+        :likesArr="post.likes"
+      >
+      </my-post>
+    </div>
+  </div>
+</div>
+  
 </template>
 
 <script>
@@ -70,6 +89,12 @@ import axios from "axios";
 
 import * as types from "../../store/types";
 
+import Post from "../post/post";
+
+global.jQuery = require("jquery");
+var $ = global.jQuery;
+window.$ = $;
+
 export default {
   props: ["image"],
   data: () => ({
@@ -77,6 +102,7 @@ export default {
     img: null,
     isFriend: false,
     requestPending: false,
+    index: 0,
   }),
   computed: {
     ...mapGetters({
@@ -93,6 +119,14 @@ export default {
       let vm = this;
       vm.$forceUpdate();
       return this.requestPending ? "Request Pending" : "Add Friend";
+    },
+    posts() {
+      let fArr = []
+      for(let i =0; i< this.$store.getters.getUserPosgts.length; i++){
+      fArr.push(this.$store.getters.getUserPosgts[i][0])
+      }
+       let unique = [...new Set(fArr)]
+      return unique;
     },
   },
 
@@ -135,6 +169,8 @@ export default {
         console.log("USerProfile 2112: ", value.data);
         this.requestPending = value.data;
       });
+      console.log('USerProfile', this.paramsId.id)
+       this.$store.dispatch(types.GET_USER_POSTS, {index: 0, id: this.$route.params.id});
   },
   methods: {
     ...mapActions({
@@ -143,7 +179,33 @@ export default {
     reload() {
       setTimeout(()=> this.$router.go(`/user/${this.paramsId.id}`),2000)
     },
+    scroll() {
+      let t = this;
+      $(window).scroll(function () {
+        if (
+          $(window).scrollTop() + $(window).height() >
+          $(document).height() - 100
+        ) {
+          console.log(" bottom!");
+          t.index += 2;
+          t.$store.dispatch(types.GET_USER_POSTS, {index: t.index, id: t.$route.params.id});
+        }
+      });
+    },
+inPostClick(post) {
+      console.log("Posts.vue inPostClick", post);
+    },
   },
+
+  mounted() {
+  this.scroll();
+  },
+  components: {
+    "my-post": Post,
+  },
+  beforeDestroy () {
+ this.$router.go()
+},
 };
 </script>
  

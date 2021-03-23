@@ -31,7 +31,9 @@ export default new Vuex.Store({
     friendsList: [],
     isFriend: false,
     comments: [],
-    messages: []
+    messages: [],
+    userPosts: [],
+    getAllMessages : []
   },
   getters: {
     getAuth() {
@@ -82,6 +84,15 @@ export default new Vuex.Store({
     [types.GET_CHAT_MESSAGES]: (state) => {
       return state.messages;
     },
+    getUserPosgts (state) {
+      
+      let unique = [...new Set(state.userPosts)];
+      console.log(unique)
+      return unique;
+    },
+    getAllMEssages (state)  {
+      return state.getAllMessages
+    }
   },
   mutations: {
     Signup: (state, payload) => {
@@ -188,15 +199,29 @@ export default new Vuex.Store({
       }
     },
     addComment: (state, payload) => { // socket
+      console.log('vuex addComment')
       let posts = state.posts;
       for (let i = 0; i < posts.length; i++) {
         if (posts[i]._id == payload.post) {
           if (posts[i].comments.findIndex((el) => el._id === payload._id) === -1) {
             posts[i].comments.push(payload);
-            console.log('vuex addComment')
           }
         }
       }
+
+      
+      let uPost = state.userPosts
+      console.log('vuex 88888', uPost)
+      for (let i =0; i < uPost.length; i++) {
+       
+          
+          if (uPost[i][0].comments.findIndex((el) => el._id === payload._id) === -1) {
+            uPost[i][0].comments.push(payload);
+          
+          
+        }
+      }
+
     },
     [types.GET_COMMENTS]: (state, payload) => {
       console.log("vuex mutation GET_COMMENT", payload);
@@ -210,8 +235,18 @@ export default new Vuex.Store({
             posts[i].likes.push(like);
           }
         }
-
       }
+
+      let uPost = state.userPosts
+      for (let i =0; i < uPost.length; i++) {
+        if ( uPost[i][0]._id == like.post) {
+          if (uPost[i][0].likes.findIndex((el) => el._id === like._id) === -1) {
+            uPost[i][0].likes.push(like)
+          }
+          
+        }
+      }
+
     },
 
     removeLike: (state, like) => {
@@ -219,11 +254,26 @@ export default new Vuex.Store({
       
       for (let i = 0; i < posts.length; i++) {
         if (posts[i]._id == like.post) {
-          if (posts[i].likes.findIndex((el) => el._id === like._id) === -1) {
-            console.log('vuex removeLike', like)
-            posts[i].likes.splice(posts[i].likes.indexOf(like), 1);
-           
+          const likeIndex = posts[i].likes.findIndex((el) => el._id === like._id) 
+          if (likeIndex >= 0) {
+            posts[i].likes.splice(likeIndex, 1);
           }
+          // if (posts[i].likes.findIndex((el) => el._id === like._id) === -1) {
+          //   console.log('vuex removeLike', like)
+          //   posts[i].likes.splice(posts[i].likes.indexOf(like), 1);
+           
+          // }
+        }
+      }
+      let uPost = state.userPosts
+      for (let i =0; i < uPost.length; i++) {
+        if ( uPost[i][0]._id == like.post) {
+          const likeIndex = uPost[i][0].likes.findIndex((el) => el._id === like._id) 
+          if (likeIndex >= 0) {
+            uPost[i][0].likes.splice(likeIndex, 1);
+          }
+          
+          
         }
       }
     },
@@ -232,6 +282,13 @@ export default new Vuex.Store({
     },
     [types.RESET_CHAT_MESSAGES]: (state) => {
       state.messages = []
+    },
+    [types.GET_USER_POSTS]: (state, posts) => {
+      console.log('vuex .GET_USER_POSTS', posts)
+      state.userPosts.push(...posts)
+    },
+    [types.GET_ALL_MESSAGES]: (state, msgs) => {
+      state.getAllMessages = msgs
     }
   },
 
@@ -449,6 +506,20 @@ export default new Vuex.Store({
           commit(types.GET_FRIEND_POSTS, res.data);
         });
     },
+    [types.GET_USER_POSTS]: ({ commit }, {index, id}) => {
+      axios
+        .get("http://localhost:3000/post/user-post/" + id, {
+          headers: {
+            index2: index,
+            authorization: localStorage.getItem("token"),
+          },
+        })
+        .then((res) => {
+          console.log('vuex userpost 3333', res.data)
+          if (res.data)
+          commit(types.GET_USER_POSTS, res.data);
+        });
+    },
     [types.ADD_COMMENT]: ({ commit }, { comment, postID }) => {
       socket.emit("new-comment", { comment, postID });
       commit(types.ADD_COMMENT, { comment, postID });
@@ -480,6 +551,18 @@ export default new Vuex.Store({
     },
     [types.RESET_CHAT_MESSAGES]: ({commit}) => {
       commit(types.RESET_CHAT_MESSAGES)
-    }
+    },
+    [types.GET_ALL_MESSAGES]: ({commit}) => {
+      axios.get("http://localhost:3000/get-all-messages",
+       {
+        headers: {
+          authorization: localStorage.getItem("token"),
+        },
+      }).then((res) => {
+        console.log('vuex types.GET_ALL_MESSAGES 99999999', res.data)
+        commit(types.GET_ALL_MESSAGES, res.data)
+      })
+    },
+      
   },
 });

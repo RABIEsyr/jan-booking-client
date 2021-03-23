@@ -162,7 +162,8 @@ export default {
     commentsArr: Array,
     items: [],
     likeNumber: Number,
-    likesArr: Array
+    likesArr: Array,
+    
   },
   data() {
     return {

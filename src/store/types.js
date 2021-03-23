@@ -16,4 +16,5 @@ export const ADD_COMMENT = "addComment";
 export const GET_COMMENTS = "getComments";
 export const GET_CHAT_MESSAGES = "getChatMessages";
 export const RESET_CHAT_MESSAGES = "resetChatMessages";
-
+export const GET_USER_POSTS = "getUserPost";
+export const GET_ALL_MESSAGES = 'getAllMessages';
