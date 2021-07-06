@@ -33,7 +33,8 @@ export default new Vuex.Store({
     comments: [],
     messages: [],
     userPosts: [],
-    getAllMessages : []
+    getAllMessages : [],
+    isMatchId: false
   },
   getters: {
     getAuth() {
@@ -54,6 +55,7 @@ export default new Vuex.Store({
       //     }
       //   }
       // }
+      console.log('vuex getPosts getters', unique)
       return unique;
     },
     getUserSrchPic(state) {
@@ -92,6 +94,9 @@ export default new Vuex.Store({
     },
     getAllMEssages (state)  {
       return state.getAllMessages
+    },
+    matchId(state) {
+      return state.isMatchId
     }
   },
   mutations: {
@@ -289,6 +294,39 @@ export default new Vuex.Store({
     },
     [types.GET_ALL_MESSAGES]: (state, msgs) => {
       state.getAllMessages = msgs
+    },
+    [types.CHECK_MATCH_ID]: (state, payload) => {
+     state.isMatchId = payload
+    },
+    [types.EDIT_POST]: (state, payload) => { 
+      for (let i = 0; i < state.posts.length; i++) {
+        if (state.posts[i]._id == payload.id) {
+          state.posts[i].text = payload.text
+        }
+      }
+    },
+    [types.EDIT_USER_POST]: (state, payload) => { 
+      
+      for (let i = 0; i < state.userPosts.length; i++) {
+        if (state.userPosts[i]._id == payload.id) {
+          state.userPosts[i].text = payload.text
+        }
+      }    
+    },
+    [types.DELETE_POST]: (state, payload) => {
+      for (let i = 0; i < state.posts.length; i++) {
+        if (state.posts[i]._id == payload.postid) {
+          state.posts.splice(i, 1);
+          console.log('veux index.js.vue, delete-post', payload)
+        }
+      }
+    },
+    [types.DELETE_USER_POST]: (state, payload) => {
+      for (let i = 0; i < state.userPosts.length; i++) {
+        if (state.userPosts[i]._id == payload.postid) {
+          state.userPosts.splice(i, 1)
+        }
+      }  
     }
   },
 
@@ -359,7 +397,7 @@ export default new Vuex.Store({
           })
           .then((res) => {
             resolve(res);
-            // console.log('vuex index', res)
+             console.log('vuex index getposts', res)
             commit("get-Posts-Http", res);
           });
       });
@@ -563,6 +601,18 @@ export default new Vuex.Store({
         commit(types.GET_ALL_MESSAGES, res.data)
       })
     },
+    [types.CHECK_MATCH_ID]: ({commit}, id) => {
+      axios.post("http://localhost:3000/check-match-id",
+      {id},
+      {
+       headers: {
+         authorization: localStorage.getItem("token"),
+       },
+     }).then((res) => {
+       console.log('vuex matchid', res.data)
+       commit(types.CHECK_MATCH_ID, res.data)
+     })
+    }
       
   },
 });

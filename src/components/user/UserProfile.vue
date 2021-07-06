@@ -21,9 +21,11 @@
       />
     </div>
     <br />
-
+    
     <div class="add-btn">
+
       <v-layout align-center justify-center>
+        {{userName}}
         <v-flex>
           <div class="text-xs-center">
             <div style="margin-left: -20px; display: contents">
@@ -75,6 +77,8 @@
         :commentsArr="post.comments"
         :likeNumber="post.likes.length"
         :likesArr="post.likes"
+        :owner="post.owner"
+        :isEdit2="false"
       >
       </my-post>
     </div>
@@ -90,6 +94,7 @@ import axios from "axios";
 import * as types from "../../store/types";
 
 import Post from "../post/post";
+import io from "socket.io-client";
 
 global.jQuery = require("jquery");
 var $ = global.jQuery;
@@ -103,6 +108,10 @@ export default {
     isFriend: false,
     requestPending: false,
     index: 0,
+     socket: io("http://localhost:3000", {
+        query: { token: localStorage.getItem("token") },
+    }),
+    userName: null 
   }),
   computed: {
     ...mapGetters({
@@ -126,11 +135,34 @@ export default {
       fArr.push(this.$store.getters.getUserPosgts[i][0])
       }
        let unique = [...new Set(fArr)]
-      return unique;
+       console.log('UserProfile, unique', unique)
+      return unique
+     
     },
   },
 
   created() {
+    this.socket.on('edit-post', (post) => {
+       this.$store.commit(types.EDIT_USER_POST, post)
+        for (let i = 0; i <this.posts.length; i++) {
+          if (this.posts[i]._id == post.id) {
+            this.posts[i].text = post.text 
+          }
+        }
+        console.log('Post.vue edit post socket22222', this.posts)
+    });
+    this.socket.on('delete-post', (post) => {
+      this.$store.commit(types.DELETE_USER_POST, post);
+      for (let i = 0; i <this.posts.length; i++) {
+          if (this.posts[i]._id == post.postid) {
+            this.posts.splice(i, 1) 
+            let vm = this;
+            vm.$forceUpdate();
+            
+          }
+        }
+        console.log('UserProfile, delete-post', this.posts)
+    })
     this.isFriendRequestExist;
     this.$store.dispatch("getUserSearchPic", this.$route.params.id);
     //this.initRequest;
@@ -171,6 +203,19 @@ export default {
       });
       console.log('USerProfile', this.paramsId.id)
        this.$store.dispatch(types.GET_USER_POSTS, {index: 0, id: this.$route.params.id});
+       this.$store.dispatch(types.CHECK_MATCH_ID, localStorage.getItem('userID'));
+
+    axios.post('http://localhost:3000/users/get-username-profile/'+this.paramsId.id,
+         {1:1},
+         {
+          headers: {
+              authorization: localStorage.getItem("token"),
+            },
+          })
+      .then((res)=> {
+        this.userName = res.data
+      })
+       
   },
   methods: {
     ...mapActions({

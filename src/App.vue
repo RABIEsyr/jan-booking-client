@@ -106,7 +106,7 @@
             ></v-text-field>
 
             <v-spacer></v-spacer>
-            <span style="margin-right: 10px">{{username}}</span>
+            <span style="margin-right: 10px;cursor: pointer" @click="onUsername">{{username}}</span>
             <!-- <v-btn icon>
               <v-icon>mdi-account</v-icon>
             </v-btn> -->
@@ -119,7 +119,18 @@
               <v-icon @click="onFriendRequest" large> mdi-account </v-icon>
             </v-badge>
             <v-btn icon>
-              <v-icon>mdi-bell</v-icon>
+
+                
+          <v-badge
+              :content="postNotification"
+              :value="postNotification"
+              color="blue"
+              overlap
+            >
+              <v-icon @click="openPostNotification =! openPostNotification;postNotification=null" large>mdi-bell</v-icon>
+            </v-badge>
+
+
             </v-btn>
             <v-btn icon large>
               <v-avatar size="32px" item>
@@ -155,20 +166,39 @@
             >
             </my-post>
            </div> -->
-
+        
+    
+            <v-card v-if="openPostNotification">
+               <v-list-item  v-for="post in postNotificationArr" :key="post.data.post._id" @click="onNotifyPost(post)">
+                  <v-list-item-content>
+                    <v-list-item-title>
+                      <span style="color:#2196F3; font-size:bold">{{post.data.post.owner.name}}</span> added new post: {{post.data.post.text}}
+                      </v-list-item-title>
+                  </v-list-item-content>
+               </v-list-item>
+                
+            </v-card>
                 <!-- Search by name -->
                 <div v-if="keywords" class="div-search">
                   <v-card
+                   style="margin-top:-30px;
+                   padding-left:0;
+                      margin-left: 30px"
+                      :style="windowWidth2 < 957 ? 'margin-top: 0px' :'margin-top:-30px'"
                     class="mx-auto card-scroll"
                     max-width="400"
                     max-height="100"
                     tile
                   >
-                    <v-list-item v-for="user in searchNewUser" :key="user.id">
-                      <v-list-item @click="onSearchNewUSer(user.id)">
+                    <v-list-item 
+                      style="padding-left:0"
+                     v-for="user in searchNewUser" :key="user.id">
+                      <v-list-item @click="onSearchNewUSer(user.id)"
+                      style="padding-left:0">
                         <v-img
                           max-height="50"
                           max-width="50"
+                          style="padding-left:0;border-radius:50px"
                           :src="'data:image/PNG;base64,' + user.image"
                         ></v-img>
                         <span style="margin-left: 50%">{{ user.name }}</span>
@@ -181,7 +211,35 @@
               </v-content>
             </v-container>
           </v-main>
+              <v-dialog
+      v-model="dialog2"
+      width="500"
+    >
+      <!-- <template v-slot:activator="{ on, attrs }">
+        <v-btn
+          color="red lighten-2"
+          dark
+          v-bind="attrs"
+          v-on="on"
+        >
+          Click Me
+        </v-btn>
+      </template> -->
+      <notify-post
+        :image="'http://localhost:3000/static/' + notifypostImage + '.PNG'"
+        :name="notifypostName"
+        :id="notifypostId"
+        :commentsArr="notifypostCommentsArr"
+        :likeNumber="notifypostLikeNumber"
+        :likesArr="notifypostLikesArr"
+        :owner="notifypostOwner"
+        :ownerName="notifypostOwnerName"
+        >
+        </notify-post>
+      
+    </v-dialog>
           <v-btn
+          v-if="$route.name== 'Posts'"
             bottom
             color="pink"
             dark
@@ -203,7 +261,7 @@
             <!-- plus button -->
             <v-card style="overflow-y: hidden !important" class="rounded-card">
               <v-card-title class="color dialog-custom darken-2">
-                Create contact
+                Create Post
               </v-card-title>
               <v-container fluid>
                 <v-row class="mx-2">
@@ -256,7 +314,7 @@ import io from "socket.io-client";
 import axios from "axios";
 //import router from './router/index';
 import { eventBus } from "./main";
-// import Post from './components/post/post'
+ import Post from './components/post/post'
 import * as types from "./store/types";
 
 
@@ -323,7 +381,19 @@ export default {
     keywords: "",
     isSearch: false,
     searchNewUser: [],
-    username: ''
+    username: '',
+    postNotification: null,
+    openPostNotification: false,
+    postNotificationArr:[],
+    dialog2: false,
+    notifypostImage: null,
+    notifypostName: null,
+    notifypostId: null,
+    notifypostCommentsArr:[],
+    notifypostLikeNumber: null,
+    notifypostLikesArr: [],
+    notifypostOwner: null,
+    notifypostOwnerName: null
   }),
   computed: {
     isAuth() {
@@ -358,9 +428,34 @@ export default {
     }
   },
   created() {
+    this.socket.on('edit-post', (post) => {
+      this.$store.commit(types.EDIT_POST, post)
+    });
+
+    this.socket.on('delete-post', (post) => {
+      this.$store.commit(types.DELETE_POST, post)
+     // this.$store.commit(types.DELETE_USER_POST, post)
+    })
+
     this.drawer = false;
     this.currentRouteName;
     this.socket.on("new-post", (post) => {
+      if (localStorage.getItem('userID') != post.data.post.owner._id) {
+        this.postNotificationArr.push(post);
+        this.postNotification++;
+      }
+      this.socket.on('delete-post', (post) => {
+        for (let i = 0; i < this.postNotificationArr.length; i++) {
+          if (this.postNotificationArr[i].data.post._id == post.postid) {
+            
+              this.postNotificationArr.splice(i, 1);
+              if (this.postNotification > 0) {
+                this.postNotification--;
+              }
+            
+          }
+        }
+      })
       console.log('App.vue new-post13333333', post)
       this.$store.dispatch("newPost", post);
     });
@@ -429,6 +524,7 @@ export default {
             headers: { authorization: localStorage.getItem("token") },
           })
           .then((res) => {
+            
             this.socket.emit("new-post", res);
           });
       } catch (error) {
@@ -470,6 +566,25 @@ export default {
     goHome() {
       this.$router.push("/posts");
     },
+    onNotifyPost(post){
+        console.log('App.vue onNotifyPost', post)
+        this.dialog2 = true;
+        this.notifypostImage = post.data.post._id
+        this.notifypostName = post.data.post.text
+        this.notifypostId = post.data.post._id
+        this.notifypostCommentsArr = post.data.post.comments
+        this.notifypostLikeNumber = post.data.post.likes.length
+        this.notifypostLikesArr = post.data.post.likes
+        this.notifypostOwner = post.data.post.owner
+        this.notifypostOwnerName = post.data.post.owner.name
+    },
+    onUsername() {
+      let uid = localStorage.getItem('userID');
+      this.$router.push({
+        name: 'userProfile',
+        params: {id: uid}
+      })
+    }
   },
   watch: {
     windowWidth2(oldWidth, newWidth) {
@@ -485,6 +600,9 @@ export default {
   beforeDestroy() {
     window.removeEventListener("resize", this.onResize);
   },
+  components: {
+    'notify-post': Post
+  }
 };
 </script>
 
@@ -521,5 +639,11 @@ export default {
 
 .div-search {
   z-index: 10;
+}
+
+@media screen and(max-width: 957px) {
+  .div-search {
+    margin-top: 1300px !important;
+  }
 }
 </style>

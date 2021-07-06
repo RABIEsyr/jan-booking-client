@@ -27,7 +27,7 @@
       
         <v-list-item-avatar>
           <v-img
-            :src="'http://localhost:3000/profile-image/' + getAwayImg(chat.from._id, chat.to) + '.PNG'"
+            :src="'http://localhost:3000/profile-image/' + getAwayImg(chat.from._id, chat.to._id) + '.PNG'"
           ></v-img>
         </v-list-item-avatar>
 
@@ -37,7 +37,8 @@
 
 
         <v-list-item-content>
-            <v-list-item-title v-text="nameOfSender(chat.from)"></v-list-item-title>
+            <v-list-item-title v-text="nameOfSender(chat.from, chat.to)"></v-list-item-title>
+            
         </v-list-item-content>
         
         <v-list-item-icon>
@@ -87,7 +88,9 @@ export default {
              query: { token: localStorage.getItem("token") },
              }),
     recent: [],
-    name: ''
+    name: '', 
+    from: '',
+    to: ''
   }),
   created() {
     // this.getAllMessage()
@@ -104,24 +107,39 @@ export default {
          }
          
         this.recent = ret
-          this.sortArrayByDate(this.recent)   
+          this.sortArrayByDate(this.recent)  
+
         
       });
 
 
        this.socket.on("new-msg-list", (msg) => {
         for (let i = 0; i < this.recent.length; i++) {
-          if ( (this.recent[i].from == msg.from._id && this.recent[i].from == msg.from._id) ||
-             (this.recent[i].to == msg.to && this.recent[i].to == msg.to) ||
-             (this.recent[i].from == msg.to && this.recent[i].to == msg.from._id) ||
-            (this.recent[i].to == msg.from._id && this.recent[i].from == msg.to) ) {
+          if ( (this.recent[i].from._id == msg.from._id && this.recent[i].from == msg.from._id) ||
+             (this.recent[i].to._id == msg.to._id && this.recent[i].to._id == msg.to._id) ||
+             (this.recent[i].from_id == msg.to._id && this.recent[i].to._id == msg.from._id) ||
+            (this.recent[i].to._id == msg.from._id && this.recent[i].from._id== msg.to._id) ) {
               this.recent.splice(i, 1)
-              this.recent.push(msg)
-              
-              console.log('Chat.vue 11111', this.recent[i])
+             
               }
         }
-        console.log('Chat.vue989898', msg)
+         this.recent.push(msg)
+          this.nameOfSender(msg.from._id, msg.to._id) 
+        this.sortArrayByDate(this.recent)
+      })
+
+      this.socket.on("new-msg-list2", (msg) => {
+        for (let i = 0; i < this.recent.length; i++) {
+          if ( (this.recent[i].from._id == msg.from._id && this.recent[i].from == msg.from._id) ||
+             (this.recent[i].to._id == msg.to._id && this.recent[i].to._id == msg.to._id) ||
+             (this.recent[i].from_id == msg.to._id && this.recent[i].to._id == msg.from._id) ||
+            (this.recent[i].to._id == msg.from._id && this.recent[i].from._id== msg.to._id) ) {
+              this.recent.splice(i, 1)
+             
+              }
+        }
+         this.recent.push(msg)
+          this.nameOfSender(msg.from._id, msg.to._id) 
         this.sortArrayByDate(this.recent)
       })
   },
@@ -139,11 +157,13 @@ export default {
       return first == localStorage.getItem('userID') ? second : first
     },
     
-    nameOfSender(from) {
+      nameOfSender(from, to) {
       if (from._id == localStorage.getItem('userID')) {
-        return 'you'
+         return `you -> ${to.name}`
+       
+        
       } else {
-        return from.name
+        return `You <- ${from.name}`
       }
     }, 
 
