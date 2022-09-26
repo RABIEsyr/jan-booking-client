@@ -1,27 +1,28 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 
-import Signup from "../components/auth/Signup";
-import Login from "../components/auth/Login";
-import Chat from "../components/chat/Chat";
-import UploadPhoto from "../components/uploadPhoto/UploadPhoto";
-import Posts from "../components/post/Posts";
-import UserProfile from "../components/user/UserProfile";
-import FriendRequest from "../components/friendRequest/friendRequest.vue";
-import Friends from "../components/friendRequest/friends.vue";
-import ChatOneToOne from '../components/chat/ChatOneToOne.vue';
-// import App from '../App';
+import axios from 'axios'
+
 
 Vue.use(VueRouter);
 
 const routes = [
   {
-    path: "/signup",
-    name: "signup",
-    component: Signup,
-    // component: () => import('../views/About.vue')
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
+    path: '*',
+    beforeEnter: (async(to, from, next) => {
+      if (await checkAuth()) {
+        next('/')
+      } else {
+        next({name: 'login'})
+      }
+    })
+  },
+  {
+    path: "/login",
+    name: "login",
+     component: () => import('../components/auth/Login'),
+    beforeEnter: async (to, from, next) => {
+      if (await checkAuth()) {
         next("/");
       } else {
         next();
@@ -29,23 +30,23 @@ const routes = [
     },
   },
   {
-    path: "/login",
-    name: "login",
-    component: Login,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
-        next("/");
-      } else {
+    path: "/booking",
+    name: "booking",
+    component: () => import('../components/booking/booking'),
+    beforeEnter: async(to, from, next) => {
+      if (await checkAuth()) {
         next();
+      } else {
+        next("/login");
       }
     },
   },
   {
     path: "/",
     name: "Home",
-    redirect: "posts",
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
+    redirect: "booking",
+    beforeEnter: async(to, from, next) => {
+      if (await checkAuth()) {
         next();
       } else {
         next("/login");
@@ -53,11 +54,11 @@ const routes = [
     },
   },
   {
-    path: "/posts",
-    name: "Posts",
-    component: Posts,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
+    path: "/add-house",
+    name: "Houses",
+    component: () => import('../components/house/addHouse'),
+    beforeEnter: async(to, from, next) => {
+      if (await checkAuth()) {
         next();
       } else {
         next("/login");
@@ -65,88 +66,43 @@ const routes = [
     },
   },
   {
-    path: "/chat",
-    name: "chat",
-    component: Chat,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
+    path: "/history",
+    name: "History",
+    component: () => import('../components/history/history'),
+    beforeEnter: async(to, from, next) => {
+      if (await checkAuth()) {
         next();
       } else {
         next("/login");
       }
     },
   },
-  {
-    path: "/upload-photo",
-    name: "upload-photo",
-    component: UploadPhoto,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
-        next();
-      } else {
-        next("/login");
-      }
-    },
-  },
-  {
-    path: "/user/:id",
-    name: "userProfile",
-    component: UserProfile,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
-        next();
-      } else {
-        next("/login");
-      }
-    },
-  },
-  {
-    path: "/friend-requests",
-    name: "friendRequest",
-    component: FriendRequest,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
-        next();
-      } else {
-        next("/login");
-      }
-    },
-  },
-  {
-    path: "/get-friends",
-    name: "getFriends",
-    component: Friends,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
-        next();
-      } else {
-        next("/login");
-      }
-    },
-  },
-  {
-    path: "/private-chat/:receiverID",
-    name: "private-chat",
-    component: ChatOneToOne,
-    beforeEnter: (to, from, next) => {
-      if (localStorage.getItem("token")) {
-        next();
-      } else {
-        next("/login");
-      }
-    },
-  }
+  
+ 
+  
+  
 ];
 
 const router = new VueRouter({
   mode: "history",
   base: process.env.BASE_URL,
   routes,
+  scrollBehavior() {
+    window.scrollTo(0, 0)
+  }
 });
 
-// router.beforeEach((to, from, next) => {
-//   if (to.name !== 'signup'  && !localStorage.getItem('token')) next({ name: 'signup' })
-//   else next()
-// });
+
+
+
+
+async function checkAuth() {
+  let isAuth = await axios.get('/check-auth', {
+    headers: {
+      authorization: localStorage.getItem('token')
+    }
+  })
+  return isAuth.data.success;
+}
 
 export default router;
